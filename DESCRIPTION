@@ -1,0 +1,13 @@
+Package: lava.nlin 
+Type: Package
+Title: Non-linear latent variable models via StEM and Laplace approximation 
+Version: 0.1  
+Date: 2011-01-26
+Author: Klaus K. Holst
+Maintainer: Who to complain to <yourfault@somewhere.net>
+Description: More about what it does (maybe more than one line)
+License: GPL
+LazyLoad: yes
+Depends: Rcpp (>= 0.8.6), RcppArmadillo (>= 0.2.9), numDeriv
+LinkingTo: Rcpp, RcppArmadillo
+SystemRequirements: GNU make

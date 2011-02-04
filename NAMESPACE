@@ -1,0 +1,2 @@
+useDynLib(lava.nlin)
+exportPattern("^[[:alpha:]]+")
