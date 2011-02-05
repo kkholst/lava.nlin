@@ -118,7 +118,6 @@ coef.StEM <- function(object,burnin=0,var=FALSE,vardiag=FALSE,both=FALSE,...) {
 
 ###{{{ sim
 
-"sim" <- function(x,...) UseMethod("sim")
 sim.StEM <- function(x,n=5000,burnin=min(NROW(x$theta)-1,100),theta=coef(x,burnin), control=list(), eta=x$mc$eta, CondVarEta=var(x$mc$eta), ...) {
   
   if (is.null(CondVarEta)) {

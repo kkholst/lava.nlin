@@ -6,7 +6,7 @@ nsem <- function(model,
                  ...) {
 
   require(numDeriv)  
-  procmod <- function(M,...) {    
+  procmod <- function(M,data,...) {    
     if (class(M$measure0)[1]=="formula") M$measure0 <- all.vars(M$measure0)
     if (class(M$measure1)[1]=="formula") M$measure1 <- all.vars(M$measure1)
     if (class(M$measure2)[1]=="formula") M$measure2 <- all.vars(M$measure2)
@@ -48,10 +48,11 @@ nsem <- function(model,
 
   models <- c()  
   if (is.list(model[[1]])) { ## multigroup
-    for (i in 1:length(model))
-      models <- c(models, list(procmod(model[[i]])))
+    for (i in 1:length(model)) {      
+      models <- c(models, list(procmod(model[[i]],data[[i]])))
+    }
   } else {
-    models <- list(procmod(model))
+    models <- list(procmod(model,data))
   }
   allnames <- unique(unlist(lapply(models,function(x) x$names)))
   for (i in 1:length(models)) {
