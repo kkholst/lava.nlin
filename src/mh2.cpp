@@ -21,8 +21,6 @@ SEXP MH(
   Rcpp::NumericMatrix V(Sigma);  
 
   mat VarEta(V.begin(), V.nrow(), V.ncol(), false); 
-  RcppParams ModelPar(modelpar);
-  RcppParams MCMCopt(control);  
 
   Rcpp::NumericVector C(cluster);
   colvec fCluster(C.begin(),C.size(),false);
@@ -35,13 +33,32 @@ SEXP MH(
     ClusterSize(Cluster(i))++;
   }  
 
-  int nlatent = ModelPar.getIntValue("nlatent");
-  string model = ModelPar.getStringValue("model");
-  bool internal = ModelPar.getBoolValue("internal");
-  double stepsize = MCMCopt.getDoubleValue("stepsize");
-  int m = MCMCopt.getIntValue("m");
-  int thin = MCMCopt.getIntValue("thin");
-  int nsim = MCMCopt.getIntValue("nsim");
+  List ModelPar(modelpar);
+  List MCMCopt(control);
+  IntegerVector _nlatent = ModelPar["nlatent"]; unsigned nlatent = _nlatent[0];
+  IntegerVector _internal = ModelPar["internal"]; bool internal = _internal[0];
+  string model = CHAR(STRING_ELT(getListElement(modelpar,"model"), 0));  
+  IntegerVector _m = MCMCopt["m"]; unsigned m = _m[0];
+  NumericVector _stepsize = MCMCopt["stepsize"]; double stepsize = _stepsize[0];
+  IntegerVector _thin = MCMCopt["thin"]; unsigned thin = _thin[0];
+  IntegerVector _nsim = MCMCopt["nsim"]; unsigned nsim = _nsim[0];
+  //  RcppParams ModelPar(modelpar);
+  //  RcppParams MCMCopt(control);     
+  // int nlatent = ModelPar.getIntValue("nlatent");
+  // string model = ModelPar.getStringValue("model");
+  // bool internal = ModelPar.getBoolValue("internal");
+  // double stepsize = MCMCopt.getDoubleValue("stepsize");
+  // int m = MCMCopt.getIntValue("m");
+  // int thin = MCMCopt.getIntValue("thin");
+  // int nsim = MCMCopt.getIntValue("nsim");
+  // cerr << "nlatent=" << nlatent << endl;
+  // cerr << "internal=" << internal << endl;  
+  // cerr << "stepsize=" << stepsize << endl;
+  // cerr << "m=" << m << endl;
+  // cerr << "thin=" << thin << endl;
+  // cerr << "nsim=" << nsim << endl;
+  // cerr << "model=" << model << endl;
+
 
   DesignFunPt modelPt = evalh; /* Default: model design from R function 
 				  defined by the string: model */

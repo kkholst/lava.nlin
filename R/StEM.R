@@ -240,7 +240,6 @@ StEM <- function(model,
   if (!missing(theta0)) mymodelpar$theta <- theta0
   nlatent <- mymodelpar$nlatent
 
-  browser()
   on.exit(
           {
             val <- list(theta=res, ##Sigma=Var,

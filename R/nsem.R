@@ -27,11 +27,19 @@ nsem <- function(model,
     if (length(M$pred2)>0) nn <- c(nn,paste("eta2",M$pred2,sep="<-"))
     nn <- c(nn,
             switch(M$model,
+                   nsem3b=c("eta2<-eta0","eta2<-eta0^2",
+                     "eta1<-eta0","eta1<-eta0^2",
+                     "eta0<->eta0",
+                     "eta1<->eta1","eta2<->eta2"),
                    nsem3=c("eta2<-eta0","eta2<-eta0^2",
                           "eta0<->eta0","eta1<->eta1","eta2<->eta2"),
                    nsem2=c("eta2<-eta1","eta2<-eta1^2",
                      "eta1<->eta1","eta2<->eta2")))
+    omit <- switch(M$model,
+                   nsem3b="eta0<->eta0",
+                   NULL)
     nlatent <- switch(M$model,
+                      nsem3b=3,
                       nsem3=3,
                       nsem2=2)
     if (length(M$measure0)>0) nn <- c(nn,paste(M$measure0,M$measure0,sep="<->"))
@@ -39,10 +47,10 @@ nsem <- function(model,
     if (length(M$measure2)>0) nn <- c(nn,paste(M$measure2,M$measure2,sep="<->"))
 
     mm <- list(nlatent=nlatent, nvar0=length(M$measure0), nvar1=length(M$measure1), nvar2=length(M$measure2), npred0=length(M$pred0), npred1=length(M$pred1), npred2=length(M$pred2))
-    npar <- c()
-    theta0 <- rep(0,with(mm,2*nvar0 + 2*(nvar1+nvar2-1) + npred0+npred1+npred2+
-                         2+nvar0+nvar1+nvar2+nlatent))
-    res <- list(data=mydata,names=nn,modelpar=mm,model=M$model)
+##    npar <- c()
+##    theta0 <- rep(0,with(mm,2*nvar0 + 2*(nvar1+nvar2-1) + npred0+npred1+npred2+
+##                         2+nvar0+nvar1+nvar2+nlatent))
+    res <- list(data=mydata,names=nn,modelpar=mm,model=M$model,omit=omit)
     return(res)
   }
 
@@ -58,15 +66,19 @@ nsem <- function(model,
   for (i in 1:length(models)) {
     models[[i]]$idx <- match(models[[i]]$names,allnames)
   }
+  allomit <- unique(unlist(lapply(models,function(x) x$omit)))
+  pidx <- which(!(allnames%in%allomit))
 
   f <- function(p,...) { ## -log-likelihood
+    p0 <- rep(0,length(allnames))
+    p0[pidx] <- p
     val <- 0
     for (i in 1:length(models))
-      val <- val + with(models[[i]],-Lapl(data,p[idx],modelpar,model=model,control=laplace.control))
+      val <- val + with(models[[i]],-Lapl(data,p0[idx],modelpar,model=model,control=laplace.control))
     return(val)
   }
   
-  theta0 <- rep(0,length(allnames)) ## Starting values
+  theta0 <- rep(0,length(setdiff(allnames,allomit))) ## Starting values
   if (!is.null(control$start)) {
     if (length(control$start)==length(theta0)) {      
       theta0 <- control$start
@@ -76,6 +88,7 @@ nsem <- function(model,
     }    
   }
 
+  control$start <- NULL
   res.Laplace <- tryCatch(nlminb(theta0,f,control=control),error=function(e) NULL)
   if (is.null(res.Laplace)) stop("Optimization error")
 
@@ -87,9 +100,10 @@ nsem <- function(model,
     S0 <- NULL
     vcov0 <- matrix(NA,nrow=length(theta0),ncol=length(theta0))
   }
+  colnames(vcov0) <- rownames(vcov0) <- setdiff(allnames,allomit)
   mycoef <- cbind(res.Laplace$par,diag(vcov0)^0.5)
   mycoef <- cbind(mycoef,mycoef[,1]/mycoef[,2],2*(1-pnorm(abs(mycoef[,1]/mycoef[,2]))))
-  rownames(mycoef) <- allnames; colnames(mycoef) <- c("Estimate","Std.Err","Z-value","P(>|z|)")
+  rownames(mycoef) <- setdiff(allnames,allomit); colnames(mycoef) <- c("Estimate","Std.Err","Z-value","P(>|z|)")
   res <- list(coef=mycoef, vcov=vcov0, opt=res.Laplace, score=S0, data=data)
   class(res) <- "lava.nlin"
   return(res)

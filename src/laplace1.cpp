@@ -160,18 +160,21 @@ RcppExport SEXP nsem3(SEXP data,
   mat iS = inv(S);
   double detS = det(S);
  
-  RcppParams Modelpar(modelpar);
-  unsigned nlatent = Modelpar.getIntValue("nlatent");
-  unsigned ny0 = Modelpar.getIntValue("nvar0");
-  unsigned ny1 = Modelpar.getIntValue("nvar1");
-  unsigned ny2 = Modelpar.getIntValue("nvar2");
-  unsigned npred0 = Modelpar.getIntValue("npred0");
-  unsigned npred1 = Modelpar.getIntValue("npred1");
-  unsigned npred2 = Modelpar.getIntValue("npred2");
-  RcppParams Control(control);   
-  double lambda = Control.getDoubleValue("lambda");
-  double niter = Control.getIntValue("niter");
-  double Dtol = Control.getDoubleValue("Dtol");
+
+
+  Rcpp::List Modelpar(modelpar);
+  Rcpp::IntegerVector _nlatent = Modelpar["nlatent"]; unsigned nlatent = _nlatent[0];
+  Rcpp::IntegerVector _ny0 = Modelpar["nvar0"]; unsigned ny0 = _ny0[0];
+  Rcpp::IntegerVector _ny1 = Modelpar["nvar1"]; unsigned ny1 = _ny1[0];
+  Rcpp::IntegerVector _ny2 = Modelpar["nvar2"]; unsigned ny2 = _ny2[0];
+  Rcpp::IntegerVector _npred0 = Modelpar["npred0"]; unsigned npred0 = _npred0[0];
+  Rcpp::IntegerVector _npred1 = Modelpar["npred1"]; unsigned npred1 = _npred1[0];
+  Rcpp::IntegerVector _npred2 = Modelpar["npred2"]; unsigned npred2 = _npred2[0];
+  Rcpp::List Control(control);   
+  Rcpp::NumericVector _lambda = Control["lambda"]; double lambda = _lambda[0];
+  Rcpp::NumericVector _niter = Control["niter"]; double niter = _niter[0];
+  Rcpp::NumericVector _Dtol = Control["Dtol"]; double Dtol = _Dtol[0];
+
 
   rowvec mu0(ny0), lambda0(ny0);
   rowvec mu1(ny1), lambda1(ny1);

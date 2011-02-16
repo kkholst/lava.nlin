@@ -436,8 +436,10 @@ SEXP Eval(const SEXP modelpar,
   
   Rcpp::NumericVector theta(getListElement(modelpar, "theta"));
   colvec Theta(theta.begin(), theta.size(), 1, false); // Avoid copying
-  RcppParams ModelPar(modelpar);
-  string model = ModelPar.getStringValue("model");
+
+  //  List ModelPar(modelpar);
+  string model = CHAR(STRING_ELT(getListElement(modelpar,"model"), 0));
+
   DesignFunPt modelPt = DensFixed(model);
   Rcpp::NumericMatrix D(data);
   int nobs = D.nrow(), k = D.ncol();
