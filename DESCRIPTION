@@ -8,6 +8,6 @@ Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: GPL
 LazyLoad: yes
-Depends: Rcpp (>= 0.9.0), RcppArmadillo (>= 0.2.11), numDeriv, lava (>= 0.9-16)
+Depends: Rcpp (>= 0.9.0), RcppArmadillo (>= 0.2.11), numDeriv, lava (>= 0.9-16), coda, survival
 LinkingTo: Rcpp, RcppArmadillo
 SystemRequirements: GNU make

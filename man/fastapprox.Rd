@@ -2,7 +2,7 @@
 \alias{fastapprox}
 \title{Fast approximation}
 \description{
-  
+  Interpolation function
 }
 \usage{
 fastapprox(x1,x2,y) 

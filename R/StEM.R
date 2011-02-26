@@ -1,11 +1,3 @@
-##source("Mstep.R")
-## mylib <- paste("mh2", .Platform$dynlib.ext, sep = "")
-## if (is.loaded("MH"))
-##   dyn.unload(mylib)
-## try(dyn.load(mylib))  
-if (!require(coda)) print("ups no coda")
-
-
 ###{{{ Eval
 
 Eval <- function(modelpar,eta,data,cluster=1:NROW(data)) {
@@ -24,7 +16,6 @@ Eval <- function(modelpar,eta,data,cluster=1:NROW(data)) {
 ###{{{ as.mcmc
 
 as.mcmc.StEM <- function(x,...) {
-  require(coda)
   ##  theta <- lapply(x, function(y) y[["theta"]])
   ##  draws <- as.mcmc.list(lapply(theta, function(x) mcmc(x)))
   ##  return(draws)
@@ -398,7 +389,6 @@ Estep <- function(modelpar,
                   modelpar=modelpar,
                   control=mycontrol,
                   DUP=FALSE)
-  save(arglist, file="arglist.rda")
   res <- do.call(".Call",arglist)
 
 ##  return(res)
@@ -418,18 +408,17 @@ Estep <- function(modelpar,
   ##  res <- lapply(res,function(x) as.data.frame(x[-c(1:burnin),]))
   ##  return(res)
   if (fulldata) {
-    require(Hmisc)
-    cdata<- reShape(res$chain, base=paste("eta",1:ncol(eta),".",sep=""), reps=nrow(data))[,-1]
-    names(cdata) <- c(paste("eta",0:(ncol(eta)-1),sep=""))
-    res$mean <- colMeans(cdata)
-    res$var <- var(cdata)
-    mydata <- as.data.frame(data)
-    cdata <- cbind(cdata, t(sapply(cdata$seqno,function(i) unlist(mydata[i,]))))
-    res$cdata <- cdata
+    ## require(Hmisc)
+    ## cdata<- Hmisc::reShape(res$chain, base=paste("eta",1:ncol(eta),".",sep=""), reps=nrow(data))[,-1]
+    ## names(cdata) <- c(paste("eta",0:(ncol(eta)-1),sep=""))
+    ## res$mean <- colMeans(cdata)
+    ## res$var <- var(cdata)
+    ## mydata <- as.data.frame(data)
+    ## cdata <- cbind(cdata, t(sapply(cdata$seqno,function(i) unlist(mydata[i,]))))
+    ## res$cdata <- cdat
   }
   res
 }
 
 ###}}} Estep
-
 
