@@ -66,8 +66,8 @@ plot(as.mcmc(X)) ## Convergence of chain?
 library(MASS)
 eqscplot(e$chain,type="l")
 points(X,col=heat.colors(nrow(X)),cex=0.5)
-print(colMeans(e$chain[-(1:(nsim/2)),]))
-print(var(e$chain[-(1:(nsim/2)),]))
+print(colMeans(e$chain[-(1:5000),]))
+print(var(e$chain[-(1:5000),]))
 }
 
 ## An a multivariate t-distribution (df=3)
