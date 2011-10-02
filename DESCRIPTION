@@ -1,8 +1,8 @@
 Package: lava.nlin 
 Type: Package
 Title: Non-linear latent variable models via StEM and Laplace approximation 
-Version: 0.2-2  
-Date: 2011-02-11
+Version: 0.2-3
+Date: 2011-10-02
 Author: Klaus K. Holst
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)

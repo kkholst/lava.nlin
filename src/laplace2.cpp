@@ -114,7 +114,7 @@ RcppExport SEXP nsem2(SEXP data,
 		      SEXP control
 		      ) {   
 
-  srand ( time(NULL) ); /* initialize random seed: */
+  //  srand ( time(NULL) ); /* initialize random seed: */
   
   Rcpp::NumericVector Theta(theta);  
   Rcpp::NumericMatrix D(data);

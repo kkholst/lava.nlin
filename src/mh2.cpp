@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "mh2.h"
 #include "models.h"
+//#include <time.h>
 
 SEXP MH(
 	SEXP data,  
@@ -11,7 +12,8 @@ SEXP MH(
 	SEXP control
 	) {   
   
-  srand ( time(NULL) ); /* initialize random seed: */
+  RNGScope scope;
+  //  srand ( time(NULL) ); /* initialize random seed: */
 
   Rcpp::NumericVector theta(getListElement(modelpar, "theta"));
   colvec Theta(theta.begin(), theta.size(), 1, false); // Avoid copying
@@ -108,7 +110,8 @@ SEXP MH(
   for (int iter=0; iter<nsim; iter++) {
     for (int k=0; k<ncluster; k++) {
       logf_prop(k) = 0; 
-      colvec Z = randn(nlatent);      
+      //      colvec Z = randn(nlatent);      
+      colvec Z = rnorm(nlatent,0,1);
       eta = stepsize*(L*Z);
       etas.row(k) = trans(eta);
     }
@@ -119,7 +122,8 @@ SEXP MH(
 	      Data.row(i), etas.row(Cluster(i)), ClusterSize(Cluster(i)), modelpar);
     } // i (nobs)
 
-    colvec U = randu(ncluster);
+    //    colvec U = randu(ncluster);
+    colvec U = runif(ncluster,0,1);
     // cerr << "---------------------" << endl;
     // cerr << "logf_prop=" << Rout(logf_prop) << endl;
     // cerr << "logf_old=" << Rout(logf_old) << endl;

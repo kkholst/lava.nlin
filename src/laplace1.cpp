@@ -1,6 +1,6 @@
 //#include "models.h"
 #include "utils.h"
-
+//#include <time.h>
 
 RcppExport SEXP nsem3(SEXP data,
 				SEXP theta,
@@ -149,7 +149,7 @@ RcppExport SEXP nsem3(SEXP data,
 		    SEXP control
 		    ) {   
 
-  srand ( time(NULL) ); /* initialize random seed: */
+  //  srand ( time(NULL) ); /* initialize random seed: */
   
   Rcpp::NumericVector Theta(theta);  
   Rcpp::NumericMatrix D(data);
