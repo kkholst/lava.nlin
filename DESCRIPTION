@@ -5,7 +5,7 @@ Version: 0.2-4
 Date: 2011-10-05
 Author: Klaus K. Holst
 Maintainer: Klas K. Holst <k.k.holst@biostat.ku.dk>
-Description: More about what it does (maybe more than one line)
+Description: Estimation of quadratic polynomial effects in structural equation models 
 License: GPL
 LazyLoad: yes
 Depends: Rcpp (>= 0.9.0), RcppArmadillo (>= 0.2.11), numDeriv, lava (>= 0.9-16), coda, survival
