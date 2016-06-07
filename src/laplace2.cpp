@@ -1,7 +1,14 @@
 //#include "models.h"
 #include "utils.h"
+#include "quadrule.h"
+#include <cmath>
 
-
+/*
+c(y1,y2,y3,...) ~ eta2
+c(x1,x2,x3,...) ~ eta1
+eta2 ~ eta1 + eta1^2
+c(eta2,eta1) ~ x
+*/
 RcppExport SEXP nsem2(SEXP data,
 		      SEXP theta,
 		      SEXP Sigma,
@@ -17,7 +24,6 @@ hObj h2(const rowvec &eta,
 	const rowvec &gamma,
 	int fast=0) {  
 
-
   unsigned ny=mu1.n_elem+mu2.n_elem;
   int k=2+ny;
   colvec h(k);
@@ -32,7 +38,6 @@ hObj h2(const rowvec &eta,
   }
   h(1) = eta(1)-gamma(0)*eta(0)-gamma(1)*eta(0)*eta(0);
   h(0) = eta(0);
-  //  cerr << "her\n";
   unsigned dpos = ny-1;
   for (unsigned i=0; i<beta1.n_elem; i++) {
     dpos++;
@@ -52,19 +57,15 @@ hObj h2(const rowvec &eta,
   mat D = zeros(k,2);
   D(0,0) = 1;  D(1,0) = -gamma(0)-2*gamma(1)*eta(0);
   D(1,1) = 1; 
-  //  D[1,1] = 1; D[2,2] = 1;
   for (unsigned i=0; i<mu1.n_elem; i++) {
     D(i+2,0) = -lambda1(i);
 }
   for (unsigned i=0; i<mu2.n_elem; i++) {
     D(i+2+mu1.n_elem,1) = -lambda2(i);
   }
-  // cerr << "D=\n" << D << endl;
   mat dS = -trans(D)*iS;  
   res.grad = dS*h;
   res.hess = dS*D;
-  //mat dummy = trans(iSh)*d2eta0;
-  //res.hess(0,0) -= dummy[0];
   res.hess(1,0) -= -2*gamma(1)*iSh(2);
   return(res);
 }
@@ -75,36 +76,57 @@ rowvec laNR2(const rowvec &data, const mat &iS, const double &detS,
 	     const rowvec &beta1,
 	     const rowvec &beta2,
 	     const rowvec &gamma,
-	     const double &Dtol, const unsigned &niter, const double &lambda) {  
-  rowvec eta = zeros(1,2);
+	     const double &Dtol, const unsigned &niter, const double &lambda, const int &nq=0) {  
+  rowvec eta = zeros(1,2);  
   for (unsigned i=0; i<niter; i++) {
-    hObj K = h2(eta,data,iS,
-		mu1,mu2,lambda1,lambda2,beta1,beta2,gamma);
+      hObj K = h2(eta,data,iS,
+	     mu1,mu2,lambda1,lambda2,beta1,beta2,gamma);
       double Sabs = as_scalar(trans(K.grad)*K.grad);      
       if (Sabs<Dtol) break;
-      //      mat Delta = trans(K.grad)*inv(K.hess + 0.1*eye(K.hess.n_cols,K.hess.n_cols));
       mat Delta = trans(K.grad)*inv(K.hess);
-      eta = eta-lambda*Delta;  
-      //      hObj K = h(eta1,data,iS,
-      //		mu1,mu2,lambda1,lambda2,beta,gamma);
-      
+      eta = eta-lambda*Delta;        
   }
 
+  unsigned p = (iS.n_cols-2);
+  rowvec res(3);
   hObj K = h2(eta,data,iS,
 	      mu1,mu2,lambda1,lambda2,beta1,beta2,gamma);
-  //  cerr << "K.grad=" << K.grad << endl;
   double logHdet;
   double sign;
-  log_det(logHdet,sign,K.hess); // log(det(-K.hess))
-  if (isnan(logHdet)) logHdet = -1000;
-  double logI = K.hSh - 0.5*(logHdet+log(detS));
-  //  double logI = K.hSh - 0.5*log(detS);
-  //  cerr << "logI" << logI << endl;
-  //  cerr << "hess" << -K.hess << endl;
-  //  cerr << "hSh" << -K.hSh << endl;
-  rowvec res(3);
-  res(0) = logI;  for (unsigned i=0; i<2; i++) res(i+1) = eta(i);
-  return(res);
+  if (nq==0) {
+    log_det(logHdet,sign,K.hess); // log(det(-K.hess))
+    if (std::isnan(logHdet)) logHdet = -1000;
+    double logI = K.hSh - 0.5*(logHdet+log(detS));
+    res(0) = logI -p*0.5*log(2*datum::pi);
+  } else {
+
+    QuadRule gh(nq);
+    vec z=gh.Abscissa();
+    vec w=gh.Weight();
+    double C = sqrt(2);
+    mat H = K.hess; 
+    mat G = -H;
+    mat B = chol(G);
+    double Sum = 0;
+    for (unsigned k=0; k<z.n_elem; k++) {
+      for (unsigned l=0; l<z.n_elem; l++) {
+	mat z0(2,1);
+	z0(0) = z[k]; z0(1) = z[l];
+	rowvec a0 = eta+C*trans(B.i()*z0);
+	K = h2(a0,data,iS,mu1,mu2,lambda1,lambda2,beta1,beta2,gamma,true);
+	// log_det(logHdet,sign,K.hess); // log(det(-K.hess))
+	// if (std::isnan(logHdet)) logHdet = -1000;
+	double w0 = w[k]*w[l]*exp(z0[0]*z0[0])*exp(z0[1]*z0[1]);
+ 	double ll0 = -0.5*log(detS) + K.hSh - (p+2)*0.5*log(2*datum::pi);
+	Sum += exp(ll0)*w0;
+      }
+    }    
+    res(0) = 2*log(C)-0.5*log(det(G))+log(Sum);
+    //res(0) += 
+    //res(0) += p*0.5*log(2*datum::pi);
+  }
+  for (unsigned i=0; i<2; i++) res(i+1) = eta(i);
+  return(res); 
 }
 
 RcppExport SEXP nsem2(SEXP data,  
@@ -126,17 +148,15 @@ RcppExport SEXP nsem2(SEXP data,
   double detS = det(S);
 
   Rcpp::List Modelpar(modelpar);
-  Rcpp::IntegerVector _nlatent = Modelpar["nlatent"]; unsigned nlatent = _nlatent[0];
-  Rcpp::IntegerVector _ny0 = Modelpar["nvar0"]; unsigned ny0 = _ny0[0];
   Rcpp::IntegerVector _ny1 = Modelpar["nvar1"]; unsigned ny1 = _ny1[0];
   Rcpp::IntegerVector _ny2 = Modelpar["nvar2"]; unsigned ny2 = _ny2[0];
-  Rcpp::IntegerVector _npred0 = Modelpar["npred0"]; unsigned npred0 = _npred0[0];
   Rcpp::IntegerVector _npred1 = Modelpar["npred1"]; unsigned npred1 = _npred1[0];
   Rcpp::IntegerVector _npred2 = Modelpar["npred2"]; unsigned npred2 = _npred2[0];
   Rcpp::List Control(control);   
   Rcpp::NumericVector _lambda = Control["lambda"]; double lambda = _lambda[0];
   Rcpp::NumericVector _niter = Control["niter"]; double niter = _niter[0];
   Rcpp::NumericVector _Dtol = Control["Dtol"]; double Dtol = _Dtol[0];
+  Rcpp::IntegerVector _nq = Control["nq"]; unsigned nq = _nq[0];
 
   rowvec mu1(ny1), lambda1(ny1);
   rowvec mu2(ny2), lambda2(ny2);
@@ -171,31 +191,20 @@ RcppExport SEXP nsem2(SEXP data,
     pos++;
   }
   gamma(0) = Theta[pos]; gamma(1) = Theta[pos+1];
-
-  // rowvec eta(nlatent);
-  // eta[0]=1; eta[1]=2; 
-  // cerr << "mu1=" << mu1 << endl;
-  // cerr << "mu2=" << mu2 << endl;
-  // cerr << "l1=" << lambda1 << endl;
-  // cerr << "l2=" << lambda2 << endl;
-  // cerr << "beta1=" << beta1 << endl;
-  // cerr << "beta2=" << beta2 << endl;
-  // cerr << "gamma=" << gamma << endl;  
-  // cerr << "invSigma=\n" << iS << endl;
   
   mat lap(nobs,3);
   for (unsigned i=0; i<nobs; i++) {
     rowvec newlap = laNR2(Data.row(i), iS, detS,
 			  mu1, mu2, lambda1, lambda2, beta1, beta2, gamma,
-			 Dtol,niter,lambda);
+			  Dtol,niter,lambda,nq);
     lap.row(i) = newlap;
   }
 
   List  res;
-  int dimeta = 2;
   res["indiv"] = lap;
-  res["logLik"] = sum(lap.col(0)) + (dimeta-V.nrow())*log(2.0*math::pi())*nobs/2;
-  res["norm0"] = (dimeta-V.nrow())*log(2*math::pi())/2;
+  res["logLik"] = sum(lap.col(0));
+  //    (dimeta-V.nrow())*log(2.0*datum::pi)*nobs/2;
+  // res["norm0"] = (dimeta-V.nrow())*log(2*datum::pi)/2;
   return res;
 }
 

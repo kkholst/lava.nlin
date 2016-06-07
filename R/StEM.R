@@ -1,7 +1,7 @@
 ###{{{ Eval
 
 Eval <- function(modelpar,eta,data,cluster=1:NROW(data)) {
-  arglist <- list(name="Eval",
+  arglist <- list("Eval",
                   modelpar=modelpar,
                   eta=eta,
                   data=data,
@@ -381,7 +381,7 @@ Estep <- function(modelpar,
   mycontrol <- list(stepsize=1,nsim=100,burnin=0,m=1,thin=0)
   mycontrol[names(control)] <- control
   ndata <- ncol(data)
-  arglist <- list(name="MH",
+  arglist <- list("MH",
                   data=data,
                   cluster=cluster,
                   etainit=eta,

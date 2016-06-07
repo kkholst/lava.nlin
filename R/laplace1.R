@@ -1,7 +1,7 @@
 lap <- function(data,modelpar,control=list(niter=100,lambda=0.5,Dtol=1e-5),
                 model
                 ) {
-  arglist <- list(name=model,
+  arglist <- list(model,
                   data=data,
                   theta=modelpar$theta,
                   Sigma=modelpar$Sigma,

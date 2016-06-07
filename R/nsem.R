@@ -1,9 +1,10 @@
 nsem <- function(model,
                  data,
-                 laplace.control=list(lambda=0.3,niter=100,Dtol=1e-5),
+                 laplace.control=list(),
                  control=list(trace=1),
                  vcov=TRUE,
                  ...) {
+
 
   require(numDeriv)  
   procmod <- function(M,data,...) {    
@@ -69,6 +70,10 @@ nsem <- function(model,
   allomit <- unique(unlist(lapply(models,function(x) x$omit)))
   pidx <- which(!(allnames%in%allomit))
 
+  laplace.control0 <- list(lambda=0.3,niter=100,Dtol=1e-5,nq=0)
+  laplace.control0[names(laplace.control)] <- laplace.control
+  laplace.control <- laplace.control0
+
   f <- function(p,...) { ## -log-likelihood
     p0 <- rep(0,length(allnames))
     p0[pidx] <- p
@@ -91,7 +96,7 @@ nsem <- function(model,
   control$start <- NULL
   res.Laplace <- tryCatch(nlminb(theta0,f,control=control),error=function(e) NULL)
   if (is.null(res.Laplace)) stop("Optimization error")
-
+    
   if (vcov) {
     S0 <- numDeriv::grad(f,res.Laplace$par)
     H0 <- numDeriv::hessian(f,res.Laplace$par)

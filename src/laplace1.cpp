@@ -1,6 +1,7 @@
 //#include "models.h"
 #include "utils.h"
 //#include <time.h>
+#include <cmath>
 
 RcppExport SEXP nsem3(SEXP data,
 				SEXP theta,
@@ -131,7 +132,7 @@ rowvec laNR(const rowvec &data, const mat &iS, const double &detS,
   double logHdet;
   double sign;
   log_det(logHdet,sign,K.hess); // log(det(-K.hess))
-  if (isnan(logHdet)) logHdet = -1000;
+  if (std::isnan(logHdet)) logHdet = -1000;
   double logI = K.hSh - 0.5*(logHdet+log(detS));
   //  double logI = K.hSh - 0.5*log(detS);
   //  cerr << "logI" << logI << endl;
@@ -161,9 +162,8 @@ RcppExport SEXP nsem3(SEXP data,
   double detS = det(S);
  
 
-
   Rcpp::List Modelpar(modelpar);
-  Rcpp::IntegerVector _nlatent = Modelpar["nlatent"]; unsigned nlatent = _nlatent[0];
+  // Rcpp::IntegerVector _nlatent = Modelpar["nlatent"]; unsigned nlatent = _nlatent[0];
   Rcpp::IntegerVector _ny0 = Modelpar["nvar0"]; unsigned ny0 = _ny0[0];
   Rcpp::IntegerVector _ny1 = Modelpar["nvar1"]; unsigned ny1 = _ny1[0];
   Rcpp::IntegerVector _ny2 = Modelpar["nvar2"]; unsigned ny2 = _ny2[0];
@@ -223,17 +223,6 @@ RcppExport SEXP nsem3(SEXP data,
     pos++;
   }
   gamma(0) = Theta[pos]; gamma(1) = Theta[pos+1];
-
-  // cerr << "mu0=" << mu0 << endl;
-  // cerr << "mu1=" << mu1 << endl;
-  // cerr << "mu2=" << mu2 << endl;
-  // cerr << "lambda0=" << lambda0 << endl;
-  // cerr << "lambda1=" << lambda1 << endl;
-  // cerr << "lambda2=" << lambda2 << endl;
-  // cerr << "beta0=" << beta0 << endl;
-  // cerr << "beta1=" << beta1 << endl;
-  // cerr << "beta2=" << beta2 << endl;
-  // cerr << "gamma=" << gamma << endl;
   
   mat lap(nobs,4);
   for (unsigned i=0; i<nobs; i++) {
@@ -247,8 +236,8 @@ RcppExport SEXP nsem3(SEXP data,
 
   List  res;
   res["indiv"] = lap;
-  res["logLik"] = sum(lap.col(0)) + (3-V.nrow())*log(2.0*math::pi())*nobs/2;
-  res["norm0"] = (3-V.nrow())*log(2*math::pi())/2;
+  res["logLik"] = sum(lap.col(0)) + (3-V.nrow())*log(2.0*datum::pi)*nobs/2;
+  res["norm0"] = (3-V.nrow())*log(2*datum::pi)/2;
   return res;
 }
 

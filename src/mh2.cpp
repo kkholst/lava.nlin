@@ -43,7 +43,7 @@ SEXP MH(
   IntegerVector _m = MCMCopt["m"]; unsigned m = _m[0];
   NumericVector _stepsize = MCMCopt["stepsize"]; double stepsize = _stepsize[0];
   IntegerVector _thin = MCMCopt["thin"]; unsigned thin = _thin[0];
-  IntegerVector _nsim = MCMCopt["nsim"]; unsigned nsim = _nsim[0];
+  IntegerVector _nsim = MCMCopt["nsim"]; int nsim = _nsim[0];
   //  RcppParams ModelPar(modelpar);
   //  RcppParams MCMCopt(control);     
   // int nlatent = ModelPar.getIntValue("nlatent");
@@ -92,7 +92,7 @@ SEXP MH(
 	    Data.row(i), oldetas.row(Cluster(i)), ClusterSize(Cluster(i)), modelpar);    
   }
   vector<int> mwhich(m);
-  for (int i=0; i<m; i++) {
+  for (unsigned i=0; i<m; i++) {
     mwhich[m-1-i] = nsim-(thin+1)*i;
   }
   int mcounter = 0;

@@ -1,6 +1,6 @@
 //#include "models.h"
 #include "utils.h"
-
+#include <cmath>
 
 RcppExport SEXP nsem3b(SEXP data,
 				SEXP theta,
@@ -132,7 +132,7 @@ rowvec laNRb(const rowvec &data, const mat &iS, const double &detS,
   double logHdet;
   double sign;
   log_det(logHdet,sign,K.hess); // log(det(-K.hess))
-  if (isnan(logHdet)) logHdet = -1000;
+  if (std::isnan(logHdet)) logHdet = -1000;
   double logI = K.hSh - 0.5*(logHdet+log(detS));
   //  double logI = K.hSh - 0.5*log(detS);
   //  cerr << "logI" << logI << endl;
@@ -164,7 +164,7 @@ RcppExport SEXP nsem3b(SEXP data,
  
 
   Rcpp::List Modelpar(modelpar);
-  Rcpp::IntegerVector _nlatent = Modelpar["nlatent"]; unsigned nlatent = _nlatent[0];
+  // Rcpp::IntegerVector _nlatent = Modelpar["nlatent"]; unsigned nlatent = _nlatent[0];
   Rcpp::IntegerVector _ny0 = Modelpar["nvar0"]; unsigned ny0 = _ny0[0];
   Rcpp::IntegerVector _ny1 = Modelpar["nvar1"]; unsigned ny1 = _ny1[0];
   Rcpp::IntegerVector _ny2 = Modelpar["nvar2"]; unsigned ny2 = _ny2[0];
@@ -251,8 +251,8 @@ RcppExport SEXP nsem3b(SEXP data,
 
   List  res;
   res["indiv"] = lap;
-  res["logLik"] = sum(lap.col(0)) + (3-V.nrow())*log(2.0*math::pi())*nobs/2;
-  res["norm0"] = (3-V.nrow())*log(2*math::pi())/2;
+  res["logLik"] = sum(lap.col(0)) + (3-V.nrow())*log(2.0*datum::pi)*nobs/2;
+  res["norm0"] = (3-V.nrow())*log(2*datum::pi)/2;
   return res;
 }
 
