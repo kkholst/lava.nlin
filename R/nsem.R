@@ -83,7 +83,7 @@ nsem <- function(model,
     return(val)
   }
   
-  theta0 <- rep(0,length(setdiff(allnames,allomit))) ## Starting values
+  theta0 <- rep(0.2,length(setdiff(allnames,allomit))) ## Starting values
   if (!is.null(control$start)) {
     if (length(control$start)==length(theta0)) {      
       theta0 <- control$start

@@ -104,12 +104,15 @@ rowvec laNR2(const rowvec &data, const mat &iS, const double &detS,
     vec z=gh.Abscissa();
     vec w=gh.Weight();
     double C = sqrt(2);
-    mat H = K.hess; 
-    mat G = -H;
-    mat B = chol(G);
-    double Sum = 0;
-    for (unsigned k=0; k<z.n_elem; k++) {
-      for (unsigned l=0; l<z.n_elem; l++) {
+    mat H = K.hess;
+    if (logHdet<=-1000) {
+      res(0) = logHdet;
+    } else {
+      mat G = -H;
+      mat B = chol(G);
+      double Sum = 0;
+      for (unsigned k=0; k<z.n_elem; k++) {
+	for (unsigned l=0; l<z.n_elem; l++) {
 	mat z0(2,1);
 	z0(0) = z[k]; z0(1) = z[l];
 	rowvec a0 = eta+C*trans(B.i()*z0);
@@ -119,11 +122,10 @@ rowvec laNR2(const rowvec &data, const mat &iS, const double &detS,
 	double w0 = w[k]*w[l]*exp(z0[0]*z0[0])*exp(z0[1]*z0[1]);
  	double ll0 = -0.5*log(detS) + K.hSh - (p+2)*0.5*log(2*datum::pi);
 	Sum += exp(ll0)*w0;
-      }
-    }    
-    res(0) = 2*log(C)-0.5*log(det(G))+log(Sum);
-    //res(0) += 
-    //res(0) += p*0.5*log(2*datum::pi);
+	}
+      }        
+      res(0) = 2*log(C)-0.5*log(det(G))+log(Sum);
+    }
   }
   for (unsigned i=0; i<2; i++) res(i+1) = eta(i);
   return(res); 
