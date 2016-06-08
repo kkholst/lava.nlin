@@ -29,15 +29,17 @@ hObj h2(const rowvec &eta,
   colvec h(k);
   unsigned pos=1;
   for (unsigned i=0; i<mu1.n_elem; i++) {
-    pos++;
-    h(pos) = data(i)-mu1(i)-lambda1(i)*eta(0);
+    pos++;    
+    h(pos) = data(i)-mu1(i)*(i>0)-lambda1(i)*eta(0);
   }
   for (unsigned i=0; i<mu2.n_elem; i++) {
     pos++;
-    h(pos) = data(i+mu1.n_elem)-mu2(i)-lambda2(i)*eta(1);
+    h(pos) = data(i+mu1.n_elem)-mu2(i)*(i>0)-lambda2(i)*eta(1);
   }
   h(1) = eta(1)-gamma(0)*eta(0)-gamma(1)*eta(0)*eta(0);
   h(0) = eta(0);
+  h(1) -= mu2(0);
+  h(0) -= mu1(0);
   unsigned dpos = ny-1;
   for (unsigned i=0; i<beta1.n_elem; i++) {
     dpos++;
@@ -105,27 +107,30 @@ rowvec laNR2(const rowvec &data, const mat &iS, const double &detS,
     vec w=gh.Weight();
     double C = sqrt(2);
     mat H = K.hess;
-    if (logHdet<=-1000) {
-      res(0) = logHdet;
-    } else {
-      mat G = -H;
-      mat B = chol(G);
-      double Sum = 0;
-      for (unsigned k=0; k<z.n_elem; k++) {
-	for (unsigned l=0; l<z.n_elem; l++) {
+
+    mat G = -H;
+    mat U; vec s; mat V;
+    svd(U,s,V,G);
+    for (unsigned k=0; k<s.n_elem; k++) if (s[k]<1e-9) s[k] = 1e-9;
+    mat Bi = U*diagmat(1/sqrt(s))*V;
+    //mat B = chol(G);
+    double logdetG = sum(log(s));
+    double Sum = 0;
+    for (unsigned k=0; k<z.n_elem; k++) {
+      for (unsigned l=0; l<z.n_elem; l++) {
 	mat z0(2,1);
 	z0(0) = z[k]; z0(1) = z[l];
-	rowvec a0 = eta+C*trans(B.i()*z0);
+	rowvec a0 = eta+C*trans(Bi.t()*z0);
+	//rowvec a0 = eta+C*trans(B.i()*z0);
 	K = h2(a0,data,iS,mu1,mu2,lambda1,lambda2,beta1,beta2,gamma,true);
-	// log_det(logHdet,sign,K.hess); // log(det(-K.hess))
-	// if (std::isnan(logHdet)) logHdet = -1000;
 	double w0 = w[k]*w[l]*exp(z0[0]*z0[0])*exp(z0[1]*z0[1]);
  	double ll0 = -0.5*log(detS) + K.hSh - (p+2)*0.5*log(2*datum::pi);
 	Sum += exp(ll0)*w0;
-	}
-      }        
-      res(0) = 2*log(C)-0.5*log(det(G))+log(Sum);
+      }
     }
+    res(0) = 2*log(C)-0.5*logdetG+log(Sum);
+    // res(0) = 2*log(C)-0.5*log(det(G))+log(Sum);    
+      
   }
   for (unsigned i=0; i<2; i++) res(i+1) = eta(i);
   return(res); 

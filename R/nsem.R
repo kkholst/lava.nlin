@@ -3,6 +3,7 @@ nsem <- function(model,
                  laplace.control=list(),
                  control=list(trace=1),
                  vcov=TRUE,
+                 p,
                  ...) {
 
 
@@ -46,7 +47,10 @@ nsem <- function(model,
     if (length(M$measure0)>0) nn <- c(nn,paste(M$measure0,M$measure0,sep="<->"))
     if (length(M$measure1)>0) nn <- c(nn,paste(M$measure1,M$measure1,sep="<->"))
     if (length(M$measure2)>0) nn <- c(nn,paste(M$measure2,M$measure2,sep="<->"))
-
+    if (M$model=="nsem2") {
+        nn[1] <- "eta1"
+        nn[1+length(M$measure1)] <- "eta2"        
+    }    
     mm <- list(nlatent=nlatent, nvar0=length(M$measure0), nvar1=length(M$measure1), nvar2=length(M$measure2), npred0=length(M$pred0), npred1=length(M$pred1), npred2=length(M$pred2))
 ##    npar <- c()
 ##    theta0 <- rep(0,with(mm,2*nvar0 + 2*(nvar1+nvar2-1) + npred0+npred1+npred2+
@@ -70,7 +74,7 @@ nsem <- function(model,
   allomit <- unique(unlist(lapply(models,function(x) x$omit)))
   pidx <- which(!(allnames%in%allomit))
 
-  laplace.control0 <- list(lambda=0.3,niter=100,Dtol=1e-5,nq=0)
+  laplace.control0 <- list(lambda=0.5,niter=100,Dtol=1e-5,nq=0)
   laplace.control0[names(laplace.control)] <- laplace.control
   laplace.control <- laplace.control0
 
@@ -82,6 +86,11 @@ nsem <- function(model,
       val <- val + with(models[[i]],-Lapl(data,p0[idx],modelpar,model=model,control=laplace.control))
     return(val)
   }
+  if (!missing(p)) {
+      logL <- f(p)
+      return(logL)
+  }
+    
   
   theta0 <- rep(0.2,length(setdiff(allnames,allomit))) ## Starting values
   if (!is.null(control$start)) {
