@@ -153,7 +153,8 @@ double weibullmm(string model, const colvec &theta,
     Delta*nu - pow(lambda*T,p)*exp(nu);
   double part2 = as_scalar(-0.5*eta*W*trans(eta))/clustersize ;
   /*  
-  cerr << "T=" << T << endl;
+  cerr
+ << "T=" << T << endl;
   cerr << "Delta=" << Delta << endl;
   cerr << "X=" << endl << X;
   cerr << "Z=" << endl << Z;
@@ -333,10 +334,6 @@ double mimic2(string model, const colvec &theta,
     W(i,i) = 1.0/theta(2*ny+nx+i);
   }
 
-  cerr << "mu=" << endl << mu;
-  cerr << "lambda=" << endl << lambda;
-  cerr << "beta=" << endl << beta;
-  cerr << "W=" << endl << W;
     
   for (unsigned i=0; i<ny; i++) {
     H(i) = y(i) - mu(i) - lambda(i)*eta(0);

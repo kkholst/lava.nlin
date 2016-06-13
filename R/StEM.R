@@ -1,5 +1,7 @@
 ###{{{ Eval
 
+
+#' @export Eval
 Eval <- function(modelpar,eta,data,cluster=1:NROW(data)) {
   arglist <- list("Eval",
                   modelpar=modelpar,
@@ -65,11 +67,11 @@ print.StEM <- function(x,burnin=0,...) {
 ###}}} print
 
 ###{{{ plot
+
 plot.StEM <- function(x,idx,start=1,end=nrow(x$theta),coda=FALSE,lwd=2,xlab="Iteration",ylab="Parameter value",...) {
   mywin <- seq(start,end)
   if (coda) {
-    require(coda)
-    m <- window(as.mcmc(x),start=start,end=end)
+    m <- window(coda::as.mcmc(x),start=start,end=end)
     plot(m[,idx],...)
     return(invisible(x))
   }
@@ -80,9 +82,11 @@ plot.StEM <- function(x,idx,start=1,end=nrow(x$theta),coda=FALSE,lwd=2,xlab="Ite
   matplot(x$theta[mywin,idx], type="l",lwd=lwd,ylab=ylab,xlab=xlab,...)
   invisible(x)
 }
+
 ###}}} plot
 
 ###{{{ coef
+
 coef.StEM <- function(object,burnin=0,var=FALSE,vardiag=FALSE,both=FALSE,...) {
   if (both) {
     res <- c(coef(object,burnin=burnin,...),coef(object,burnin=burnin,vardiag=TRUE,...))
@@ -105,6 +109,7 @@ coef.StEM <- function(object,burnin=0,var=FALSE,vardiag=FALSE,both=FALSE,...) {
   }
   return(res)
 }
+
 ###}}} coef
 
 ###{{{ sim
@@ -201,6 +206,56 @@ restart.StEM <- function(x,iter=5000,theta=tail(x$theta,1),Sigma=tail(x$Sigma,1)
 
 ###{{{ StEM
 
+#' Stochastic EM algorithm
+#' 
+#' Stochastic EM algorithm
+#' 
+#' 
+#' @param model String defining model
+#' @param modelpar Model parameters
+#' @param theta0 Initial parameter vector
+#' @param data data-frame
+#' @param cluster See \code{Estep}
+#' @param eta See \code{Estep}
+#' @param control See \code{Estep}
+#' @param Mfun Function defining M-step
+#' @param CondVarEta Variance of proposal distribution (defaults to the
+#' identity matrix).
+#' @param update Adaptive algorithm, where the variance of the proposal
+#' distribution is updated in each E-step from the empirical distribution of
+#' the latent variables given the data (obtained from previous E-step).
+#' @param m The number of imputations to base the E-step on (m=1 => StEM)
+#' @param nsim Number of samples to draw in the E-step (a burnin period is
+#' needed!)
+#' @param iter Number of iterations of the EM-algorithm
+#' @param stepsize Scaling of the variance of the proposal distribution
+#' @param burnin For development testing only
+#' @param plot Plot coordinates 'idx' of chain
+#' @param idx Trace these coordinates
+#' @param printidx Print these coordinates in each M-step
+#' @param printvar Boolean indicating whether variance parameters should be
+#' printed
+#' @param \dots Additional parameters parsed on to lower-level functions.
+#' @return list
+#' @author Klaus K. Holst
+#' @keywords models
+#' @examples
+#' 
+#' \dontrun{
+#' modelpar <- list(nlatent=3, ny1=4, ny2=3, npred=2)
+#' modelpar$model <- "nsem1"
+#' nparreg <- with(modelpar, ny1+ny2 + (ny1-1) + (ny2-1) + 2 + npred)
+#' nparvar <- with(modelpar, ny1+ny2+nlatent)
+#' modelpar$theta <- rep(5,nparreg+nparvar)
+#' npar <- with(modelpar, ny1+ny2 + (ny1-1) + (ny2-1) + npred + 2 + ny1 +
+#' ny2 + nlatent)
+#' aa <- StEM(modelpar$model,modelpar=modelpar,theta0=modelpar$theta,data=yy,cluster=1:NROW(yy),nsim=200,iter=500,plot=FALSE,update=FALSE,stepsize=0.2,idx=15:16,m=5)
+#' plot(aa,idx=15:16)
+#' bb <- lava.nlin::restart(aa,stepsize=0.1,nsim=1000,update=TRUE,m=1)
+#' bb
+#' }
+#' 
+#' @export StEM
 StEM <- function(model,
                  modelpar,
                  theta0,data,cluster=1:nrow(data),eta,
@@ -358,6 +413,79 @@ StEM <- function(model,
 
 ###{{{ Estep
 
+#' Metropolis-Hastings sampler
+#' 
+#' General Metropolis-Hastings sampler.
+#' 
+#' control parameters. 'nsim': Number of samples. 'thin': amount of thinning.
+#' 'stepsize': scale parameter of the multivariate normal proposal
+#' distribution...
+#' 
+#' @param modelpar Model parameters
+#' @param theta Initial parameter
+#' @param data data
+#' @param cluster cluster indicator
+#' @param eta Initial state of latent variable (starting point of Markov Chain)
+#' @param CondVarEta Conditional variance of eta given data (i.e. the variance
+#' of the multivariate normal proposal distribution). Defaults to the unit
+#' matrix.
+#' @param fulldata For internal use only
+#' @param keep For internal use only
+#' @param control Parameters for the MH algorithm
+#' @param \dots Additional parameters parsed to lower-level functions
+#' @return List with four members. 'accept' gives the number of accepted jumps.
+#' 'chain': a matrix containing the simulated markov chain.  'eta': The last
+#' 'k' observations from the chain (unless thin was defined in the control
+#' parameters). 'data': the data and 'eta' joined together.
+#' @author Klaus K. Holst
+#' @keywords models
+#' @examples
+#' 
+#' ## Primary use is as a sampler for the StEM-function (Stochastic EM
+#' ## algorithm)
+#' ## For faster sampling the evaluation of the target distribution should
+#' ## be implemented in C/C++.
+#' ## Here a small example, where we sample from a bivariate normal-distribution
+#' ## without specifying the normalizing constant
+#' 
+#' normMH <- function(data,eta,modelpar,...) {
+#'   m <- modelpar$theta[1:2]
+#'   W <- matrix(modelpar$theta[3:6],ncol=2)
+#'   -0.5*(eta-m)%*%W%*%t(eta-m)
+#' }
+#' 
+#' mu <- c(0,0) ## mean
+#' S <- matrix(c(1,-0.5,-0.5,2),ncol=2) ## Variance
+#' theta <- c(mu,as.vector(solve(S)))
+#' 
+#' e <- Estep(modelpar=list(model="normMH",nlatent=2,theta=theta,internal=FALSE),eta=cbind(10,10),control=list(nsim=10000,stepsize=2))
+#' 
+#' print(e$accept/10000) ## Acceptance ratio
+#' 
+#' \donttest{
+#' X <- e$chain
+#' plot(as.mcmc(X)) ## Convergence of chain?
+#' 
+#' 
+#' MASS::eqscplot(e$chain,type="l")
+#' points(X,col=heat.colors(nrow(X)),cex=0.5)
+#' print(colMeans(e$chain[-(1:5000),]))
+#' print(var(e$chain[-(1:5000),]))
+#' }
+#' 
+#' ## An a multivariate t-distribution (df=3)
+#' tMH <- function(data,eta,modelpar,...) {
+#'   m <- modelpar$theta[1:2]
+#'   W <- matrix(modelpar$theta[3:6],ncol=2)
+#'   p <- 2; df <- theta[7]
+#'   -((df+p)/2)*log(1+1/df*(eta-m)%*%W%*%t(eta-m))
+#' }
+#' theta <- c(mu,as.vector(solve(S)),df=3)
+#' e <- Estep(modelpar=list(model="tMH",nlatent=2,theta=theta,internal=FALSE),eta=cbind(10,10),control=list(nsim=10000,stepsize=2))
+#' print(e$accept/10000) ## Acceptance ratio
+#' 
+#' 
+#' @export Estep
 Estep <- function(modelpar,
                   theta=modelpar$theta,
                   data=matrix(),
@@ -388,7 +516,7 @@ Estep <- function(modelpar,
                   Sigma=CondVarEta,
                   modelpar=modelpar,
                   control=mycontrol,
-                  DUP=FALSE)
+                  DUP=FALSE,PACKAGE="lava.nlin")
   res <- do.call(".Call",arglist)
 
 ##  return(res)

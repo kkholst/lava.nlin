@@ -3,7 +3,6 @@ weibullmm <- function(formula, random, id, data,
                       ...) {
   aa <- c()
   on.exit(return(aa))
-  require(survival)
   M <- model.frame(formula,data)
   Y <- model.extract(M, "response")
   if (!inherits(Y, "Surv")) {
@@ -63,7 +62,6 @@ weibullmm <- function(formula, random, id, data,
 
 
 Mstep_weibullmm <- function(cdata,modelpar,eta,...) {
-  require(lava)
   cdata <- as.matrix(cdata)
   z_idx <- with(modelpar, (1:nlatent)+2+nx)
   eta_idx <- z_idx+modelpar$nlatent
