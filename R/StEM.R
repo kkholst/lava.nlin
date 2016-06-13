@@ -188,7 +188,6 @@ restart.StEM <- function(x,iter=5000,theta=tail(x$theta,1),Sigma=tail(x$Sigma,1)
   Mytheta <- theta
   MySigma <- Sigma
   MyMfun <- Mfun
-##  browser()
   res <- with(x, StEM(model=model,
                       modelpar=modelpar,
                       theta0=Mytheta, Sigma=MySigma,
@@ -388,7 +387,6 @@ StEM <- function(model,
 ##       cdata <- cbind(etadata, t(sapply(etadata$seqno,function(i) unlist(data[i,]))))
 ##     }
     cdata <- mc$data
-##    browser()
     newpars <- Mfun(cdata,mymodelpar,mc$eta)
     ##    etamed <- apply(mc$chain,2,median)
     ##    opts$eta <- matrix(etamed, ncol=eta)

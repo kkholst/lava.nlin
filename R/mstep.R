@@ -53,7 +53,6 @@ Mstep_nsem1 <- function(cdata,modelpar,...) {
   var.y <- unlist(lapply(c(l1,l2),function(x) t(residuals(x))%*%residuals(x)/N))
   var.eta <- unlist(lapply(list(l.eta0,l.eta1,l.eta2),function(x) t(residuals(x))%*%residuals(x)/N))
   var.eta <- var.eta*(c(gamma1*b1,b1,b2)^2)
-##  browser()
   Sigma <- diag(c(var.y,var.eta))
   res <- list(theta=c(theta,diag(Sigma)),theta.var=as.double(Sigma))
   return(res)  
@@ -81,7 +80,6 @@ Mstep_nsem1b <- function(cdata,modelpar,...) {
   l.eta1 <- lm(eta1 ~ 1 + eta0, cdata)
   l.eta2 <- lm(eta2 ~ 1 + eta0 + I(eta0^2), cdata)
   
-  ##  browser()    
   cdata$eta00 <- cdata$eta0 - coef(l.eta0)[1]
   cdata$eta10 <- cdata$eta1 - coef(l.eta1)[1]
   cdata$eta20 <- cdata$eta2 - coef(l.eta2)[1]  
@@ -122,7 +120,6 @@ Mstep_nsem1b <- function(cdata,modelpar,...) {
   var.eta <- var.eta*(c(gamma1*b1,b1,b2)^2)
   Sigma <- diag(c(var.y,var.eta))
   res <- list(theta=c(theta,diag(Sigma)),theta.var=as.double(Sigma))
-  browser()
 
   return(res)  
 }
