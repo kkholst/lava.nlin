@@ -142,7 +142,7 @@ RcppExport SEXP nsem2(SEXP data,
 		      SEXP modelpar,
 		      SEXP control
 		      ) {   
-
+BEGIN_RCPP
   //  srand ( time(NULL) ); /* initialize random seed: */
   
   Rcpp::NumericVector Theta(theta);  
@@ -213,6 +213,7 @@ RcppExport SEXP nsem2(SEXP data,
   //    (dimeta-V.nrow())*log(2.0*datum::pi)*nobs/2;
   // res["norm0"] = (dimeta-V.nrow())*log(2*datum::pi)/2;
   return res;
+END_RCPP  
 }
 
 
