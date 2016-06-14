@@ -17,6 +17,7 @@ Eval <- function(modelpar,eta,data,cluster=1:NROW(data)) {
 
 ###{{{ as.mcmc
 
+##' @export
 as.mcmc.StEM <- function(x,...) {
   ##  theta <- lapply(x, function(y) y[["theta"]])
   ##  draws <- as.mcmc.list(lapply(theta, function(x) mcmc(x)))
@@ -28,6 +29,7 @@ as.mcmc.StEM <- function(x,...) {
 
 ###{{{ window
 
+##' @export
 window.StEM <- function(x,start,end=nrow(x$theta),n,...) {
   if (!missing(n)) {
     if (missing(start)) {
@@ -49,6 +51,7 @@ window.StEM <- function(x,start,end=nrow(x$theta),n,...) {
 
 ###{{{ print
 
+##' @export
 print.StEM <- function(x,burnin=0,...) {
   with(x, {cat("Model: '",model,"' with ", modelpar$nlatent, " latent variable",sep="");
               if(modelpar$nlatent>1) cat("s",sep=""); cat(".\n", sep="") })
@@ -68,6 +71,7 @@ print.StEM <- function(x,burnin=0,...) {
 
 ###{{{ plot
 
+##' @export
 plot.StEM <- function(x,idx,start=1,end=nrow(x$theta),coda=FALSE,lwd=2,xlab="Iteration",ylab="Parameter value",...) {
   mywin <- seq(start,end)
   if (coda) {
@@ -87,6 +91,7 @@ plot.StEM <- function(x,idx,start=1,end=nrow(x$theta),coda=FALSE,lwd=2,xlab="Ite
 
 ###{{{ coef
 
+##' @export
 coef.StEM <- function(object,burnin=0,var=FALSE,vardiag=FALSE,both=FALSE,...) {
   if (both) {
     res <- c(coef(object,burnin=burnin,...),coef(object,burnin=burnin,vardiag=TRUE,...))
@@ -114,6 +119,7 @@ coef.StEM <- function(object,burnin=0,var=FALSE,vardiag=FALSE,both=FALSE,...) {
 
 ###{{{ sim
 
+##' @export
 sim.StEM <- function(x,n=5000,burnin=min(NROW(x$theta)-1,100),theta=coef(x,burnin), control=list(), eta=x$mc$eta, CondVarEta=var(x$mc$eta), ...) {
   
   if (is.null(CondVarEta)) {
@@ -139,6 +145,7 @@ sim.StEM <- function(x,n=5000,burnin=min(NROW(x$theta)-1,100),theta=coef(x,burni
 
 ###{{{ merge
 
+##' @export
 merge.StEM <- function(x,...) {
   objects <- list(x,...)
   if (length(objects)<2)
@@ -164,7 +171,10 @@ merge.StEM <- function(x,...) {
 
 ###{{{ restart
 
+##' @export
 "restart" <- function(x,...) UseMethod("restart")
+
+##' @export
 restart.StEM <- function(x,iter=5000,theta=tail(x$theta,1),Sigma=tail(x$Sigma,1),nsim,burnin=nsim-1,stepsize,CondVarEta, Mfun=x$Mfun, ...) {
   res <- NULL
   on.exit(      
@@ -462,7 +472,7 @@ StEM <- function(model,
 #' 
 #' \donttest{
 #' X <- e$chain
-#' plot(as.mcmc(X)) ## Convergence of chain?
+#' plot(coda::as.mcmc(X)) ## Convergence of chain?
 #' 
 #' 
 #' MASS::eqscplot(e$chain,type="l")

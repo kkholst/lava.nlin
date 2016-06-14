@@ -199,6 +199,7 @@ nsem <- function(model,
 }
 
 
+##' @export
 plot.lava.nlin <- function(x,diag=FALSE,f,...) {
     if (inherits(x,"lvmfit") & missing(f)) {
         NextMethod("plot",diag=diag,...)
@@ -207,6 +208,7 @@ plot.lava.nlin <- function(x,diag=FALSE,f,...) {
     }
 }
 
+##' @export
 print.lava.nlin <- function(x,...) {
     if (inherits(x,"lvmfit")) {
         return(NextMethod("print",...))
@@ -215,15 +217,18 @@ print.lava.nlin <- function(x,...) {
     return(invisible(x))
 }
 
-
+##' @export
 vcov.lava.nlin <- function(object,...) object$vcov
 
+##' @export
 score.lava.nlin <- function(x,...) x$score
 
+##' @export
 pars.lava.nlin <- function(x,...) x$opt$par
-    
+
+##' @export
 logLik.lava.nlin <- function(object,...) {
-  loglik <- -object$opt$opt["value"]
+  loglik <- -object$opt$opt[["value"]]
     if (is.null(attr(loglik, "nall"))) 
       attr(loglik, "nall") <- nrow(object$data)
   if (is.null(attr(loglik, "nobs"))) 

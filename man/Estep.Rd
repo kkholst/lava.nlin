@@ -71,7 +71,7 @@ print(e$accept/10000) ## Acceptance ratio
 
 \donttest{
 X <- e$chain
-plot(as.mcmc(X)) ## Convergence of chain?
+plot(coda::as.mcmc(X)) ## Convergence of chain?
 
 
 MASS::eqscplot(e$chain,type="l")
