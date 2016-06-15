@@ -13,7 +13,8 @@ RcppExport SEXP nsem2(SEXP data,
 		      SEXP theta,
 		      SEXP Sigma,
 		      SEXP modelpar,
-		      SEXP control);
+		      SEXP control,
+		      SEXP eb0);
 
 hObj h2(const rowvec &eta,
 	const rowvec &data, const mat &iS,
@@ -72,23 +73,47 @@ hObj h2(const rowvec &eta,
   return(res);
 }
 
-rowvec laNR2(const rowvec &data, const mat &iS, const double &detS,
+rowvec laNR2(rowvec eta,
+	     const rowvec &data, const mat &iS, const double &detS,
 	     const rowvec &mu1, const rowvec &mu2,
 	     const rowvec &lambda1, const rowvec &lambda2,
 	     const rowvec &beta1,
 	     const rowvec &beta2,
 	     const rowvec &gamma,
-	     const double &Dtol, const unsigned &niter, const double &lambda, const int &nq=0) {  
-  rowvec eta = zeros(1,2);  
+	     const double &Dtol, const unsigned &niter, const double &lambda, const int &nq=0) {
+
+
+  double ll=0;
   for (unsigned i=0; i<niter; i++) {
-      hObj K = h2(eta,data,iS,
-	     mu1,mu2,lambda1,lambda2,beta1,beta2,gamma);
-      double Sabs = as_scalar(trans(K.grad)*K.grad);      
-      if (Sabs<Dtol) break;
-      mat Delta = trans(K.grad)*inv(K.hess);
-      eta = eta-lambda*Delta;        
+    hObj K = h2(eta,data,iS,
+		    mu1,mu2,lambda1,lambda2,beta1,beta2,gamma);
+    ll = K.hSh;
+    double Sabs = norm(K.grad,2);
+    if (Sabs<Dtol) break;
+    mat Delta = trans(K.grad)*inv(K.hess);
+    eta = eta-lambda*Delta;
   }
 
+  rowvec eta0(1,2);
+  eta0(0) = mu1(0);
+  eta0(1) = mu2(0);
+  /*
+  double diff = norm(eta0-eta,2);
+  if (diff>0.5) { // Try starting the optimization in the mean eta0
+    double ll0=0;
+      for (unsigned i=0; i<niter; i++) {
+	hObj K = h2(eta0,data,iS,
+		    mu1,mu2,lambda1,lambda2,beta1,beta2,gamma);
+	ll0 = K.hSh;
+	double Sabs = norm(K.grad,2);
+	if (Sabs<Dtol) break;
+	mat Delta = trans(K.grad)*inv(K.hess);
+	eta0 = eta0-lambda*Delta;      
+      }
+      if (ll0>ll) eta=eta0;
+  }
+*/
+    
   unsigned p = (iS.n_cols-2);
   rowvec res(3);
   hObj K = h2(eta,data,iS,
@@ -108,19 +133,36 @@ rowvec laNR2(const rowvec &data, const mat &iS, const double &detS,
     double C = sqrt(2);
     mat H = K.hess;
 
+    bool useSVD=false;
     mat G = -H;
-    mat U; vec s; mat V;
-    svd(U,s,V,G);
-    for (unsigned k=0; k<s.n_elem; k++) if (s[k]<1e-9) s[k] = 1e-9;
-    mat Bi = U*diagmat(1/sqrt(s))*V;
-    //mat B = chol(G);
-    double logdetG = sum(log(s));
+    double logdetG=0;
+    mat Bi;
+    if (!useSVD)  {
+      mat U; vec s; mat V;
+      svd(U,s,V,G);
+      vec is=s;
+      for (unsigned k=0; k<s.n_elem; k++) {
+	if (s[k]<1e-9) {
+	  s[k] = 1e-9;
+	  is[k] = 0;
+	} else {
+	  is[k] = 1/sqrt(s[k]);
+	}
+      }
+      Bi = trans(U*diagmat(is)*V);
+      logdetG = sum(log(s));
+    } else {
+      mat B = chol(G);
+      Bi = B.i();
+      logdetG = log(det(G));
+    }
+
     double Sum = 0;
     for (unsigned k=0; k<z.n_elem; k++) {
       for (unsigned l=0; l<z.n_elem; l++) {
 	mat z0(2,1);
 	z0(0) = z[k]; z0(1) = z[l];
-	rowvec a0 = eta+C*trans(Bi.t()*z0);
+	rowvec a0 = eta+C*trans(Bi*z0);
 	//rowvec a0 = eta+C*trans(B.i()*z0);
 	K = h2(a0,data,iS,mu1,mu2,lambda1,lambda2,beta1,beta2,gamma,true);
 	double w0 = w[k]*w[l]*exp(z0[0]*z0[0])*exp(z0[1]*z0[1]);
@@ -140,7 +182,8 @@ RcppExport SEXP nsem2(SEXP data,
 		      SEXP theta,
 		      SEXP Sigma,
 		      SEXP modelpar,
-		      SEXP control
+		      SEXP control,
+		      SEXP eb0
 		      ) {   
 BEGIN_RCPP
   //  srand ( time(NULL) ); /* initialize random seed: */
@@ -152,7 +195,9 @@ BEGIN_RCPP
   Rcpp::NumericMatrix V(Sigma);  
   mat S(V.begin(), V.nrow(), V.ncol()); 
   mat iS = inv(S);
-  double detS = det(S);
+  double detS = det(S);  
+  Rcpp::NumericMatrix EB0(eb0);
+  mat EBstart(EB0.begin(),EB0.nrow(),EB0.ncol());
 
   Rcpp::List Modelpar(modelpar);
   Rcpp::IntegerVector _ny1 = Modelpar["nvar1"]; unsigned ny1 = _ny1[0];
@@ -198,10 +243,15 @@ BEGIN_RCPP
     pos++;
   }
   gamma(0) = Theta[pos]; gamma(1) = Theta[pos+1];
-  
+
+  rowvec eta(1,2); eta(0)=mu1(0); eta(1)=mu2(0);
+
   mat lap(nobs,3);
   for (unsigned i=0; i<nobs; i++) {
-    rowvec newlap = laNR2(Data.row(i), iS, detS,
+    if (EBstart.n_rows==nobs) eta = EBstart.row(i);
+    // Rcpp::Rcout << "eta=" << eta << endl;
+    rowvec newlap = laNR2(eta,
+			  Data.row(i), iS, detS,
 			  mu1, mu2, lambda1, lambda2, beta1, beta2, gamma,
 			  Dtol,niter,lambda,nq);
     lap.row(i) = newlap;

@@ -38,7 +38,7 @@ nsem <- function(model,
                  data,
                  laplace.control=list(),
                  control=list(trace=1),
-                 method="ucminf",
+                 method=c("nlminb","BFGS","ucminf"),
                  vcov=TRUE,
                  p,fast=FALSE,
                  ...) {
@@ -112,24 +112,37 @@ nsem <- function(model,
   allomit <- unique(unlist(lapply(models,function(x) x$omit)))
   pidx <- which(!(allnames%in%allomit))
 
-  laplace.control0 <- list(lambda=0.5,niter=100,Dtol=1e-5,nq=0)
+  laplace.control0 <- list(lambda=0.5,niter=50,Dtol=1e-4,nq=0,eb0=FALSE)
   laplace.control0[names(laplace.control)] <- laplace.control
   laplace.control <- laplace.control0
 
-  f <- function(p,...) { ## -log-likelihood
-    p0 <- rep(0,length(allnames))
-    p0[pidx] <- p
-    val <- 0
-    for (i in 1:length(models))
-      val <- val + with(models[[i]],-Lapl(data,p0[idx],modelpar,model=model,control=laplace.control))
-    return(val)
-  }
+    eta0 <- NULL
+    if (is.matrix(laplace.control$eb0)) eta0 <- laplace.control$eb0
+    f <- function(p,eta.update=laplace.control$eb0,indiv=FALSE,...) { ## -log-likelihood
+        p0 <- rep(0,length(allnames))
+        p0[pidx] <- p
+        many <- (indiv||eta.update)&&(length(models)==1)
+        val <- with(models[[1]],Lapl(data,p0[idx],modelpar,model=model,control=laplace.control,indiv=many,eb0=eta0,...))
+        
+        if (length(models)==1) {
+            if (eta.update) {
+                eta0 <<- val[,-1,drop=FALSE] ## Write eta0 in outer scope
+                val <- val[,1]
+            }
+            ## val <- with(models[[1]],Lapl(data,p0[idx],modelpar,model=model,control=laplace.control,indiv=many,eb0=eta0,...))[,1]
+            return(-sum(val))
+        }
+        eta0 <- NULL
+        for (i in 2:length(models))
+            val <- -val - with(models[[i]],Lapl(data,p0[idx],modelpar,model=model,control=laplace.control,indiv=FALSE,...))
+        return(val)
+    }
+
   if (!missing(p)) {
-      logL <- f(p)
+      logL <- f(p,...)
       return(logL)
   }
-    
-  
+        
   theta0 <- rep(-0.2,length(setdiff(allnames,allomit))) ## Starting values
   if (!is.null(control$start)) {
     if (length(control$start)==length(theta0)) {      
@@ -144,29 +157,37 @@ nsem <- function(model,
   control0[names(control)] <- control
   control <- control0
 
-  ##  res.Laplace <- tryCatch(nlminb(theta0,f,control=control),error=function(e) NULL)
-  op <- tryCatch(optimx::optimx(theta0,f,method=method,control=control),error=function(e) NULL)
-  res.Laplace <- list(par=as.vector(coef(op)), opt=op)
+
+    ##  res.Laplace <- tryCatch(nlminb(theta0,f,control=control),error=function(e) NULL)
+    ## Nelder-Mead',
+    ##  'BFGS', 'CG', 'L-BFGS-B', 'nlm', 'nlminb', 'spg', 'ucminf',
+    ##  'newuoa', 'bobyqa', 'nmkb', 'hjkb', 'Rcgmin', or 'Rvmmin'.
+    method <- c("nlminb","BFGS","ucminf")
+    op <- tryCatch(optimx::optimx(theta0,f,method=method,control=control),error=function(e) NULL)
+    fop <- apply(coef(op),1,f)
+    iop <- which.min(fop)
+    res.Laplace <- list(par=as.vector(coef(op)[iop,]), value=op[iop,"value"], opt=op)
     
-  if (is.null(res.Laplace)) stop("Optimization error")
+    if (is.null(res.Laplace)) stop("Optimization error")
     
-  if (vcov) {
-    S0 <- numDeriv::grad(f,res.Laplace$par)
-    res.Laplace$grad <- S0     
-    H0 <- numDeriv::hessian(f,res.Laplace$par)
-    vcov0 <- tryCatch(solve(H0),error=function(e) matrix(NA,ncol=ncol(H0),nrow=nrow(H0)))
-  } else {
-    S0 <- NULL
-    vcov0 <- matrix(NA,nrow=length(theta0),ncol=length(theta0))
-  }
-  
+    if (vcov) {
+        laplace.control$eb0 <- FALSE
+        S0 <- numDeriv::grad(f,res.Laplace$par)
+        res.Laplace$grad <- S0     
+        H0 <- numDeriv::hessian(f,res.Laplace$par)
+        vcov0 <- tryCatch(solve(H0),error=function(e) matrix(NA,ncol=ncol(H0),nrow=nrow(H0)))
+    } else {
+      S0 <- NULL
+      vcov0 <- matrix(NA,nrow=length(theta0),ncol=length(theta0))
+    }
+    
   colnames(vcov0) <- rownames(vcov0) <- setdiff(allnames,allomit)
   names(res.Laplace$par) <- setdiff(allnames,allomit)
   mycoef <- cbind(res.Laplace$par,diag(vcov0)^0.5)
   mycoef <- cbind(mycoef,mycoef[,1]/mycoef[,2],2*(1-pnorm(abs(mycoef[,1]/mycoef[,2]))))
   rownames(mycoef) <- setdiff(allnames,allomit); colnames(mycoef) <- c("Estimate","Std.Err","Z-value","P(>|z|)")
-  res <- list(coef=mycoef, vcov=vcov0, opt=res.Laplace, score=S0, data=data, models=models)
-  class(res) <- "lava.nlin"
+  res <- list(par=res.Laplace$par, coefmat=mycoef, vcov=vcov0, opt=res.Laplace, score=S0, data=data, models=models)
+    class(res) <- "lava.nlin"
 
     if (model$model=="nsem2" && length(models)==1 && !fast) {
         M <- models[[1]]
@@ -188,7 +209,7 @@ nsem <- function(model,
         pm <- coef(m)
         m$order <- match(pn,pm)
         ee <- structure(c(res, list(model=m,data=data)),class=c("lava.nlin","lvmfit"))
-        ee$coef <- ee$coef[match(pm,pn),]
+        ee$coef <- ee$coefmat[match(pm,pn),]
         p <- length(M$measure1)+length(M$measure2)
         rownames(ee$coef)[seq(p+1,length(pm))] <- paste0("p",seq(length(pm)-p))
         rownames(ee$coef)[seq(p)] <- paste0("m",seq(p))
@@ -213,7 +234,7 @@ print.lava.nlin <- function(x,...) {
     if (inherits(x,"lvmfit")) {
         return(NextMethod("print",...))
     }
-    printCoefmat(x$coef)
+    printCoefmat(x$coefmat)
     return(invisible(x))
 }
 
@@ -224,11 +245,11 @@ vcov.lava.nlin <- function(object,...) object$vcov
 score.lava.nlin <- function(x,...) x$score
 
 ##' @export
-pars.lava.nlin <- function(x,...) x$opt$par
+pars.lava.nlin <- function(x,...) x$par
 
 ##' @export
 logLik.lava.nlin <- function(object,...) {
-  loglik <- -object$opt$opt[["value"]]
+  loglik <- -object$opt[["value"]]
     if (is.null(attr(loglik, "nall"))) 
       attr(loglik, "nall") <- nrow(object$data)
   if (is.null(attr(loglik, "nobs"))) 
