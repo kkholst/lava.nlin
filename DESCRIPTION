@@ -1,8 +1,8 @@
 Package: lava.nlin
 Type: Package
 Title: Non-linear latent variable models via StEM and Laplace approximation
-Version: 0.2-5
-Date: 2016-06-08
+Version: 0.2-6
+Date: 2017-03-14
 Author: Klaus K. Holst
 Maintainer: Klas K. Holst <k.k.holst@biostat.ku.dk>
 Description: Estimation of quadratic polynomial effects in structural equation
@@ -11,7 +11,7 @@ License: GPL
 LazyLoad: yes
 Depends:
     R (>= 3.0.2),
-    lava (>= 1.4.3)
+    lava (>= 1.4.7)
 Imports:
     MASS,
     coda,
@@ -20,5 +20,4 @@ Imports:
     optimx,
     Rcpp (>= 0.11)
 LinkingTo: Rcpp, RcppArmadillo (>= 0.6)
-SystemRequirements: GNU make
 RoxygenNote: 6.0.1
