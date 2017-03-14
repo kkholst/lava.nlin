@@ -8,8 +8,8 @@
 \alias{Mstep_weibullmm}
 \alias{as.mcmc.StEM}
 \alias{coef.StEM}
-\alias{finalize}
 \alias{hessian.weibull}
+\alias{finalize}
 \alias{lap}
 \alias{logl.weibull}
 \alias{merge.StEM}
@@ -32,4 +32,3 @@ for internal use
 Klaus K. Holst
 }
 \keyword{utilities}
-

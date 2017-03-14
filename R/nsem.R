@@ -19,7 +19,10 @@
 #' @param data data.frame
 #' @param laplace.control Options to the Laplace Approximation algorithm
 #' @param control Options parsed on to optimizer (nlminb)
+#' @param method Optimization method
 #' @param vcov Boolean indicating whether calculation of asymptotic standard
+#' @param p (Optional) evaluate log-likelihood in p
+#' @param fast if TRUE do not spend time on returning lava object/graph
 #' errors should be disabled
 #' @param \dots Additional parameters parsed on to lower level functions
 #' @return \code{lava.nlin} object (available methods: \code{coef},

@@ -97,4 +97,3 @@ print(e$accept/10000) ## Acceptance ratio
 Klaus K. Holst
 }
 \keyword{models}
-

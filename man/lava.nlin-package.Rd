@@ -2,8 +2,8 @@
 % Please edit documentation in R/lava.nlin-package.R
 \docType{package}
 \name{lava.nlin-package}
-\alias{lava.nlin}
 \alias{lava.nlin-package}
+\alias{lava.nlin}
 \title{Non-linear structural equation models.}
 \description{
 Estimation of parameters in non-linear structural equation models via MCEM,
@@ -13,4 +13,3 @@ Laplace Approximation or Importance Sampling
 Klaus K. Holst <k.k.holst@biostat.ku.dk>
 }
 \keyword{package}
-

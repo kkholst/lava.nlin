@@ -29,4 +29,3 @@ fastapprox(seq(-10,10,length.out=10),seq(-10,10,length.out=100),1:10)
 Klaus K. Holst
 }
 \keyword{utilities}
-
