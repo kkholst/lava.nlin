@@ -165,7 +165,6 @@ nsem <- function(model,
     ## Nelder-Mead',
     ##  'BFGS', 'CG', 'L-BFGS-B', 'nlm', 'nlminb', 'spg', 'ucminf',
     ##  'newuoa', 'bobyqa', 'nmkb', 'hjkb', 'Rcgmin', or 'Rvmmin'.
-    method <- c("nlminb","BFGS","ucminf")
     op <- tryCatch(optimx::optimx(theta0,f,method=method,control=control),error=function(e) NULL)
     fop <- apply(coef(op),1,f)
     iop <- which.min(fop)
@@ -183,7 +182,7 @@ nsem <- function(model,
       S0 <- NULL
       vcov0 <- matrix(NA,nrow=length(theta0),ncol=length(theta0))
     }
-    
+
   colnames(vcov0) <- rownames(vcov0) <- setdiff(allnames,allomit)
   names(res.Laplace$par) <- setdiff(allnames,allomit)
   mycoef <- cbind(res.Laplace$par,diag(vcov0)^0.5)
@@ -198,8 +197,10 @@ nsem <- function(model,
         m <- regression(m,from="eta1",to=M$measure1)
         m <- regression(m,from="eta2",to=M$measure2)
         m <- regression(m,from=c("eta1","eta1^2"),to="eta2")
-        m <- regression(m,from=M$pred1,to="eta1")
-        m <- regression(m,from=M$pred2,to="eta2")
+        if (length(M$pred1)>0)
+            m <- regression(m,from=M$pred1,to="eta1")
+        if (length(M$pred2)>0)
+            m <- regression(m,from=M$pred2,to="eta2")
         intercept(m,c("eta1^2",M$measure1[1],M$measure2[1])) <- 0
         covariance(m,"eta1^2") <- 0
         regression(m,from="eta1",to=M$measure1[1]) <- 1
